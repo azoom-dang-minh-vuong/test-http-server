@@ -1,9 +1,9 @@
 import http from 'http'
 import crypto from 'crypto'
 import { methods } from './const'
-import { Request } from './request'
+import { CreateRequestOptions, Request } from './request'
 
-export { Request }
+export { CreateRequestOptions, Request }
 export { Response } from './response'
 
 interface MakeRequest {

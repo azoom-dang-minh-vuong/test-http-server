@@ -5,7 +5,7 @@ import type { Client } from './client'
 import { parseBody, parseContentType, Response } from './response'
 
 const kSendRequestFn = Symbol('sendRequest')
-interface CreateRequestOptions {
+export interface CreateRequestOptions {
   method: (typeof methods)[number]
   path: string
   client: Client
