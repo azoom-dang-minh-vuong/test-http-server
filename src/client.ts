@@ -4,6 +4,7 @@ import { methods } from './const'
 import { Request } from './request'
 
 export { Request }
+export { Response } from './response'
 
 interface MakeRequest {
   (this: Client, path: string): Request
