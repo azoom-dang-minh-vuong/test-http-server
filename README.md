@@ -82,18 +82,18 @@ const response3 = await client
 ```typescript
 interface Response {
   readonly statusCode: number
-  readonly status: number
+  readonly status: number // <-- Alias of statusCode
   readonly statusMessage: string
   readonly headers: http.OutgoingHttpHeaders
-  readonly charset: BufferEncoding
-  readonly contentType: string
-  readonly body: string | object | Buffer
+  readonly charset: BufferEncoding // <-- Auto parse from 'Content-Type' header
+  readonly contentType: string // <-- Auto parse from 'Content-Type' header to MIME type
+  readonly body: string | object | Buffer // <-- Auto parse to object if 'Content-Type' is 'application/json'
 }
 ```
 
 ## 3. Advanced Usage
 
-### Extends `Request` class
+### Extends the `Request` class
 
 ```javascript
 import { Client, Request, CreateRequestOptions } from '@azoom-dang-minh-vuong/test-http-server';
