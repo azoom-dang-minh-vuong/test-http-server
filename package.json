@@ -24,6 +24,11 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azoom-dang-minh-vuong/test-http-server.git",
+    "directory": "/"
+  },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
