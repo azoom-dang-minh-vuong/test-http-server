@@ -59,6 +59,7 @@ export class Client implements Record<(typeof methods)[number], MakeRequest> {
   async close() {
     await this.promise
     return new Promise<void>((resolve, reject) => {
+      if (!this.server.listening) return resolve()
       this.server.close(err => {
         if (err) return reject(err)
         resolve()

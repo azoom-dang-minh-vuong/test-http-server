@@ -18,11 +18,19 @@ app.post('/users', (req, res, next) => {
     ...req.body,
   })
 })
+app.get('/users', (req, res, next) => {
+  console.log('-------req.query', req.query)
+  res.send([
+    {
+      id: 1,
+      name: 'John',
+    },
+  ])
+})
 app.use((err, req, res, next) => {
   console.log('-------err', err)
   res.status(500).send(err.message)
 })
-const server = http.createServer(app)
 
 const client2 = new Client(app)
 client2.promise.then(() => {
@@ -54,6 +62,7 @@ class CustomClient extends Client {
     return CustomRequest
   }
 }
+const server = http.createServer(app)
 
 const customClient = new CustomClient(server)
 

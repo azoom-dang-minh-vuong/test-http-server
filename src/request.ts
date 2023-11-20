@@ -1,9 +1,8 @@
-import type http from 'http'
-import net from 'net'
+import http from 'http'
 import { Readable } from 'stream'
-import { methods, methodsHasBody, newLine } from './const'
+import { methods, methodsHasBody } from './const'
 import type { Client } from './client'
-import { getResponseFromBuffer, Response } from './response'
+import { parseBody, parseContentType, Response } from './response'
 
 const kSendRequestFn = Symbol('sendRequest')
 interface CreateRequestOptions {
@@ -82,15 +81,31 @@ export class Request implements Promise<Response> {
   }
 
   private async [kSendRequestFn]() {
-    const { client } = this
+    const { client, _body: body } = this
     await client.promise
     return new Promise<Response>((resolve, reject) => {
-      // Client socket
-      const socket = new net.Socket()
-      getResponseFromClientSocket(socket, resolve, reject)
-      socket.connect(client.socketPath, () => {
-        writeRequestToClientSocket(socket, this)
-      })
+      const request = http
+        .request(
+          {
+            socketPath: client.socketPath,
+            headers: this.headers,
+            path: this.url.pathname + this.url.search,
+            method: this.method.toUpperCase(),
+          },
+          res => {
+            getResponse(res, resolve, reject)
+          }
+        )
+        .on('error', reject)
+      if (methodsHasBody.includes(this.method as any) && body) {
+        if (body instanceof Buffer) {
+          request.end(body)
+        } else if (body instanceof Readable) {
+          body.pipe(request)
+        } else request.end()
+      } else {
+        request.end()
+      }
     })
   }
 
@@ -110,46 +125,29 @@ export class Request implements Promise<Response> {
   [Symbol.toStringTag] = 'Request'
 }
 
-function writeRequestToClientSocket(socket: net.Socket, request: Request) {
-  // @ts-ignore
-  const { _body: body } = request
-  const url = new URL(request.url, 'http://localhost')
-  const path = url.pathname + url.search
-  socket.write(Buffer.from(`${request.method.toUpperCase()} ${path} HTTP/1.1` + newLine))
-  for (const key in request.headers) {
-    const currentVal = request.headers[key]
-    const values = Array.isArray(currentVal) ? currentVal : [currentVal]
-    values.forEach(val => {
-      socket.write(Buffer.from(`${key}: ${val}` + newLine))
-    })
-  }
-  socket.write(newLine)
-  // check if request method is not include body then finish request
-  if (!methodsHasBody.includes(request.method as any)) {
-    socket.end()
-  } else {
-    if (body instanceof Buffer) {
-      socket.end(body)
-    } else if (body instanceof Readable) {
-      body.pipe(socket)
-    }
-  }
-}
-
-function getResponseFromClientSocket(
-  socket: net.Socket,
+function getResponse(
+  res: http.IncomingMessage,
   resolve: (res: Response) => void,
   reject: (err: Error) => void
 ) {
-  const responseChunks: Buffer[] = []
-  socket.on('data', chunk => {
-    responseChunks.push(chunk)
+  const chunks: Buffer[] = []
+  res.on('data', chunk => {
+    chunks.push(chunk)
   })
-  socket.on('end', () => {
-    const responseBuffer = Buffer.concat(responseChunks)
-    resolve(getResponseFromBuffer(responseBuffer))
+  res.on('end', () => {
+    const buffer = Buffer.concat(chunks)
+    const { contentType, charset } = parseContentType(res.headers['content-type'] || '')
+    resolve({
+      statusCode: res.statusCode,
+      status: res.statusCode,
+      statusMessage: res.statusMessage,
+      contentType,
+      charset,
+      headers: res.headers,
+      body: parseBody(buffer, contentType, charset),
+    })
   })
-  socket.on('error', reject)
+  res.on('error', reject)
 }
 
 function appendToHeaders(headers: http.IncomingHttpHeaders, key: string, val: string | string[]) {
