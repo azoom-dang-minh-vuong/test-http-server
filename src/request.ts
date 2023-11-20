@@ -61,11 +61,8 @@ export class Request implements Promise<Response> {
     return this
   }
 
-  send(body: string | object | Buffer | Readable) {
-    // check if request method is not include body then throw error
-    if (!methodsHasBody.includes(this.method as any)) {
-      throw new Error(`Request method "${this.method}" does not support body`)
-    }
+  send(body?: string | object | Buffer | Readable) {
+    if (body === undefined) return this
     let data: Request['_body'] = null
     if (body instanceof Buffer || body instanceof Readable) {
       data = body
