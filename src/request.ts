@@ -82,7 +82,7 @@ export class Request implements Promise<Response> {
 
   private async [kSendRequestFn]() {
     const { client, _body: body } = this
-    await client.promise
+    await client.start()
     for (const fn of this[kHooksBeforeSend]) {
       await fn(this)
     }

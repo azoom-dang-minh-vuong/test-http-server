@@ -30,7 +30,6 @@ export class Client implements Record<(typeof methods)[number], MakeRequest> {
 
   readonly server: http.Server
   readonly socketPath: string
-  readonly promise: Promise<void>
   private [kHooksBeforeSend]: ((req: InstanceType<ReturnType<this['getRequestClass']>>) => any)[] =
     []
 
@@ -49,7 +48,12 @@ export class Client implements Record<(typeof methods)[number], MakeRequest> {
     this.server = server
     const socketPath = `/tmp/${crypto.randomUUID()}.sock`
     this.socketPath = socketPath
-    this.promise = new Promise((resolve, reject) => {
+  }
+
+  async start() {
+    if (this.server.listening) return
+    const { server, socketPath } = this
+    await new Promise<void>((resolve, reject) => {
       if (server.listening) return resolve()
       server.on('error', reject)
       server.listen(socketPath, () => {
@@ -60,9 +64,8 @@ export class Client implements Record<(typeof methods)[number], MakeRequest> {
   }
 
   async close() {
-    await this.promise
+    if (!this.server.listening) return
     return new Promise<void>((resolve, reject) => {
-      if (!this.server.listening) return resolve()
       this.server.close(err => {
         if (err) return reject(err)
         resolve()

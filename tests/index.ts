@@ -38,32 +38,29 @@ client2.onBeforeSend(async req => {
   console.log('-------req.headers from hook', req.headers)
   await new Promise(resolve => setTimeout(resolve, 1000))
 })
-client2.promise.then(() => {
-  setTimeout(() => {
-    client2
-      .post('/users?id=1')
-      .set('Authorization', 'Bearer 123')
-      .set({
-        test: ['a=1', 'b=2'],
-      })
-      .query({ id: 2 })
-      .send({ name: 'John' })
-      // .send(Buffer.from(JSON.stringify({ name: 'John' })))
-      // .set('Content-Type', 'application/json; charset=utf-8')
-      // .send(Readable.from(JSON.stringify({ name: 'John' })))
-      .then(res => {
-        console.log('----res----', res)
-        console.log('----res----', res.body)
-        client2.close().then(() => {
-          console.log('----server closed-----')
-        })
-      })
-  })
+setTimeout(async () => {
+  const res = await client2
+    .post('/users?id=1')
+    .set('Authorization', 'Bearer 123')
+    .set({
+      test: ['a=1', 'b=2'],
+    })
+    .query({ id: 2 })
+    .send({ name: 'John' })
+  // .send(Buffer.from(JSON.stringify({ name: 'John' })))
+  // .set('Content-Type', 'application/json; charset=utf-8')
+  // .send(Readable.from(JSON.stringify({ name: 'John' })))
+  console.log('----res----', res)
+  await client2.close()
+  console.log('----server closed-----')
+
+  const res2 = await client2.get('/users').query({ id: 2 })
+  console.log('----res2----', res2)
+  await client2.close()
+  console.log('----server closed-----')
 })
 
-class CustomRequest extends Request {
-
-}
+class CustomRequest extends Request {}
 
 class CustomClient extends Client {
   getRequestClass() {
