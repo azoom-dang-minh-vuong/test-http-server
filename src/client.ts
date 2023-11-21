@@ -1,7 +1,7 @@
 import http from 'http'
 import crypto from 'crypto'
 import { methods } from './const'
-import { CreateRequestOptions, Request } from './request'
+import { CreateRequestOptions, Request, kHooksBeforeSend } from './request'
 
 export { CreateRequestOptions, Request }
 export { Response } from './response'
@@ -31,6 +31,8 @@ export class Client implements Record<(typeof methods)[number], MakeRequest> {
   readonly server: http.Server
   readonly socketPath: string
   readonly promise: Promise<void>
+  private [kHooksBeforeSend]: ((req: InstanceType<ReturnType<this['getRequestClass']>>) => any)[] =
+    []
 
   constructor(app: http.RequestListener)
   // @ts-ignore
@@ -68,6 +70,11 @@ export class Client implements Record<(typeof methods)[number], MakeRequest> {
     })
   }
 
+  onBeforeSend(fn: (req: InstanceType<ReturnType<this['getRequestClass']>>) => any) {
+    this[kHooksBeforeSend].push(fn)
+    return this
+  }
+
   /**
    * Can extends this method to customize request class
    */
@@ -82,6 +89,7 @@ methods.forEach(method => {
       client: this,
       method,
       path,
+      hooksBeforeSend: this[kHooksBeforeSend],
     })
     return request
   }

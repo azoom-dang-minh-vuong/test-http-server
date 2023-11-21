@@ -1,6 +1,7 @@
 import http from 'http'
 import express from 'express'
 import { Client, Request } from '../src/client'
+import { Readable } from 'stream'
 
 // test
 const app = express()
@@ -33,6 +34,10 @@ app.use((err, req, res, next) => {
 })
 
 const client2 = new Client(app)
+client2.onBeforeSend(async req => {
+  console.log('-------req.headers from hook', req.headers)
+  await new Promise(resolve => setTimeout(resolve, 1000))
+})
 client2.promise.then(() => {
   setTimeout(() => {
     client2
@@ -43,6 +48,9 @@ client2.promise.then(() => {
       })
       .query({ id: 2 })
       .send({ name: 'John' })
+      // .send(Buffer.from(JSON.stringify({ name: 'John' })))
+      // .set('Content-Type', 'application/json; charset=utf-8')
+      // .send(Readable.from(JSON.stringify({ name: 'John' })))
       .then(res => {
         console.log('----res----', res)
         console.log('----res----', res.body)
@@ -65,6 +73,10 @@ class CustomClient extends Client {
 const server = http.createServer(app)
 
 const customClient = new CustomClient(server)
+customClient.onBeforeSend(async req => {
+  console.log('-------req.headers from hook 2', req.headers)
+  await new Promise(resolve => setTimeout(resolve, 1000))
+})
 
 customClient.get('/users').then(res => {
   console.log('----res----', res)

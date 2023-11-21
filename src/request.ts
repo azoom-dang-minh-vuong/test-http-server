@@ -5,15 +5,18 @@ import type { Client } from './client'
 import { parseBody, parseContentType, Response } from './response'
 
 const kSendRequestFn = Symbol('sendRequest')
+export const kHooksBeforeSend = Symbol('hooksBeforeSend')
 export interface CreateRequestOptions {
   method: (typeof methods)[number]
   path: string
   client: Client
+  hooksBeforeSend: ((req: Request) => any)[]
 }
 
 export class Request implements Promise<Response> {
   private client: Client
   private _body: Buffer | Readable | null = null
+  private [kHooksBeforeSend]: ((req: Request) => any)[] = []
   readonly method: (typeof methods)[number]
   readonly url: URL
   readonly headers: http.IncomingHttpHeaders = {
@@ -25,6 +28,7 @@ export class Request implements Promise<Response> {
     this.client = option.client
     this.method = option.method
     this.url = new URL(option.path, 'http://localhost')
+    this[kHooksBeforeSend] = option.hooksBeforeSend
   }
   // @ts-ignore
   set(field: string, val: string | string[]): this
@@ -73,13 +77,15 @@ export class Request implements Promise<Response> {
       data = Buffer.from(JSON.stringify(body), 'utf-8')
     }
     this._body = data
-    if (data instanceof Buffer) this.set('Content-Length', String(Buffer.byteLength(data)))
     return this
   }
 
   private async [kSendRequestFn]() {
     const { client, _body: body } = this
     await client.promise
+    for (const fn of this[kHooksBeforeSend]) {
+      await fn(this)
+    }
     return new Promise<Response>((resolve, reject) => {
       const request = http
         .request(
@@ -134,15 +140,17 @@ function getResponse(
   res.on('end', () => {
     const buffer = Buffer.concat(chunks)
     const { contentType, charset } = parseContentType(res.headers['content-type'] || '')
-    resolve({
-      statusCode: res.statusCode,
-      status: res.statusCode,
-      statusMessage: res.statusMessage,
-      contentType,
-      charset,
-      headers: res.headers,
-      body: parseBody(buffer, contentType, charset),
-    })
+    resolve(
+      Object.freeze({
+        statusCode: res.statusCode,
+        status: res.statusCode,
+        statusMessage: res.statusMessage,
+        contentType,
+        charset,
+        headers: res.headers,
+        body: parseBody(buffer, contentType, charset),
+      })
+    )
   })
   res.on('error', reject)
 }

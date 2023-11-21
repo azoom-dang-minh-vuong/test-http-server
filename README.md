@@ -1,5 +1,6 @@
 # `@azoom-dang-minh-vuong/test-http-server`
 > A simple module for http server testing purpose
+
 > Can use for both CommonJS and ES6 module
 
 ## 1. Install
@@ -17,9 +18,9 @@ yarn add -D @azoom-dang-minh-vuong/test-http-server
 
 ## 2. Usage
 
-### Initialize Client
+### 2.1 Initialize Client
 
-```javascript
+```typescript
 import http from 'http';
 import { Client } from '@azoom-dang-minh-vuong/test-http-server';
 
@@ -41,9 +42,9 @@ afterAll(async () => {
 });
 ```
 
-### Client Usage
+### 2.2 Client Usage
 
-```javascript
+```typescript
 const response1 = await client
   .get('/users?name=John&age=20')
   .query({ // <-- Set query string by object
@@ -77,7 +78,7 @@ const response3 = await client
   );
 ```
 
-### Response Interface
+### 2.3 Response Interface
 
 ```typescript
 interface Response {
@@ -93,9 +94,9 @@ interface Response {
 
 ## 3. Advanced Usage
 
-### Extends the `Request` class
+### 3.1 Extends the `Request` class
 
-```javascript
+```typescript
 import { Client, Request, CreateRequestOptions } from '@azoom-dang-minh-vuong/test-http-server';
 
 class MyRequest extends Request {
@@ -115,4 +116,12 @@ class MyClient extends Client {
 }
 
 const client = new MyClient(server);
+```
+
+### 3.2 Register hooks before request is sent
+  
+```typescript
+client.onBeforeSend((request) => {
+  // ...
+});
 ```
