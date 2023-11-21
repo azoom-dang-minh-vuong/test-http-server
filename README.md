@@ -1,6 +1,6 @@
 # `@azoom-dang-minh-vuong/test-http-server`
-> A simple module for http server testing purpose
-
+> A simple module for HTTP server integrated testing purpose
+> 
 > Can use for both CommonJS and ES6 module
 
 ## 1. Install
