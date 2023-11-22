@@ -1,22 +1,20 @@
 import http from 'http'
 import { Readable } from 'stream'
-import { methods, methodsHasBody } from './const'
+import { kHooksBeforeSend, methods, methodsHasBody } from './const'
 import type { Client } from './client'
 import { parseBody, parseContentType, Response } from './response'
 
 const kSendRequestFn = Symbol('sendRequest')
-export const kHooksBeforeSend = Symbol('hooksBeforeSend')
+
 export interface CreateRequestOptions {
   method: (typeof methods)[number]
   path: string
   client: Client
-  hooksBeforeSend: ((req: Request) => any)[]
 }
 
 export class Request implements Promise<Response> {
   private client: Client
   private _body: Buffer | Readable | null = null
-  private [kHooksBeforeSend]: ((req: Request) => any)[] = []
   readonly method: (typeof methods)[number]
   readonly url: URL
   readonly headers: http.IncomingHttpHeaders = {
@@ -28,7 +26,6 @@ export class Request implements Promise<Response> {
     this.client = option.client
     this.method = option.method
     this.url = new URL(option.path, 'http://localhost')
-    this[kHooksBeforeSend] = option.hooksBeforeSend
   }
   // @ts-ignore
   set(field: string, val: string | string[]): this
@@ -83,7 +80,7 @@ export class Request implements Promise<Response> {
   private async [kSendRequestFn]() {
     const { client, _body: body } = this
     await client.start()
-    for (const fn of this[kHooksBeforeSend]) {
+    for (const fn of client[kHooksBeforeSend]) {
       await fn(this)
     }
     return new Promise<Response>((resolve, reject) => {

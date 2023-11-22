@@ -1,7 +1,7 @@
 import http from 'http'
 import crypto from 'crypto'
-import { methods } from './const'
-import { CreateRequestOptions, Request, kHooksBeforeSend } from './request'
+import { kHooksBeforeSend, methods } from './const'
+import { CreateRequestOptions, Request } from './request'
 
 export { CreateRequestOptions, Request }
 export { Response } from './response'
@@ -92,7 +92,6 @@ methods.forEach(method => {
       client: this,
       method,
       path,
-      hooksBeforeSend: this[kHooksBeforeSend],
     })
     return request
   }
